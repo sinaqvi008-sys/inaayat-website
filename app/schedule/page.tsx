@@ -68,6 +68,37 @@ export default function SchedulePage() {
       const { error: e2 } = await supabase.from('visit_items').insert(rows);
       if (e2) throw e2;
 
+// 2.5) Notify (non-blocking) — send to your Make webhook if configured
+try {
+  const payload = {
+    type: 'visit_created',
+    visitId,
+    customer: {
+      name: form.customer_name,
+      phone: form.phone,
+      flat: form.flat,
+      address: form.address_line,
+      landmark: form.landmark,
+      maps: form.google_maps_link,
+      preferred_date: form.preferred_date,
+      preferred_time_slot: form.preferred_time_slot,
+      note: form.note
+    },
+    items: items.map(i => ({ id: i.id, title: i.title, price: i.price }))
+  };
+  const hook = process.env.NEXT_PUBLIC_ORDER_WEBHOOK_URL;
+  if (hook) {
+    await fetch(hook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  }
+} catch (e) {
+  // Ignore notification errors (don’t block the customer)
+  console.warn('Webhook notify failed', e);
+}
+
       clear();
       setSuccessId(visitId);
     } catch (e: any) {
