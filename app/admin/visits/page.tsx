@@ -2,7 +2,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { format } from 'date-fns';
 import { getPin } from '@/lib/adminAuth';
 
 type Visit = {
@@ -16,6 +15,18 @@ type Visit = {
   status: string;
   created_at: string;
 };
+
+// Simple date formatter (no external libraries)
+function fmt(d?: string) {
+  if (!d) return '';
+  const dt = new Date(d);
+  return dt.toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
 
 export default function AdminVisits() {
   const [rows, setRows] = useState<Visit[]>([]);
@@ -39,7 +50,7 @@ export default function AdminVisits() {
         headers: { 'x-admin-pin': pin }
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Failed to load');
+      if (!res.ok) throw new Error(json.error || 'Failed to load orders');
       setRows(json);
     } catch (e: any) {
       alert(e.message);
@@ -48,27 +59,51 @@ export default function AdminVisits() {
     }
   }
 
-  useEffect(() => { load(); /* first load */ }, []);
+  useEffect(() => {
+    load(); // initial load
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="container py-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Orders (Visits)</h1>
+        <Link href="/admin/products" className="text-brand text-sm">Go to Products</Link>
       </div>
 
       <div className="mt-4 grid md:grid-cols-5 gap-3">
-        <input className="input" placeholder="Search name/phone/flat"
-               value={q} onChange={e=>setQ(e.target.value)} />
-        <select className="input" value={status} onChange={e=>setStatus(e.target.value)}>
+        <input
+          className="input"
+          placeholder="Search name/phone/flat"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+        <select
+          className="input"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
           <option value="">All statuses</option>
           <option value="new">new</option>
           <option value="scheduled">scheduled</option>
           <option value="completed">completed</option>
           <option value="cancelled">cancelled</option>
         </select>
-        <input className="input" type="date" value={from} onChange={e=>setFrom(e.target.value)} />
-        <input className="input" type="date" value={to} onChange={e=>setTo(e.target.value)} />
-        <button className="btn btn-primary" onClick={load} disabled={loading}>{loading ? 'Loading...' : 'Apply'}</button>
+        <input
+          className="input"
+          type="date"
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
+        />
+        <input
+          className="input"
+          type="date"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+        />
+        <button className="btn btn-primary" onClick={load} disabled={loading}>
+          {loading ? 'Loading...' : 'Apply'}
+        </button>
       </div>
 
       <div className="mt-4 overflow-auto">
@@ -84,20 +119,29 @@ export default function AdminVisits() {
             </tr>
           </thead>
           <tbody>
-            {rows.map(v => (
+            {rows.map((v) => (
               <tr key={v.id} className="border-b">
-                <td className="py-2 pr-4">{v.created_at ? format(new Date(v.created_at), 'dd-MMM HH:mm') : ''}</td>
+                <td className="py-2 pr-4">{fmt(v.created_at)}</td>
                 <td className="py-2 pr-4">{v.customer_name}</td>
                 <td className="py-2 pr-4">{v.phone}</td>
                 <td className="py-2 pr-4">{v.status}</td>
-                <td className="py-2 pr-4">{v.preferred_date} {v.preferred_time_slot ? `(${v.preferred_time_slot})` : ''}</td>
                 <td className="py-2 pr-4">
-                  <Link className="text-brand" href={`/admin/visits/${v.id}`}>Open</Link>
+                  {v.preferred_date}{' '}
+                  {v.preferred_time_slot ? `(${v.preferred_time_slot})` : ''}
+                </td>
+                <td className="py-2 pr-4">
+                  <Link className="text-brand" href={`/admin/visits/${v.id}`}>
+                    Open
+                  </Link>
                 </td>
               </tr>
             ))}
             {!rows.length && (
-              <tr><td className="py-4 text-gray-500" colSpan={6}>No orders found.</td></tr>
+              <tr>
+                <td className="py-4 text-gray-500" colSpan={6}>
+                  No orders found.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
