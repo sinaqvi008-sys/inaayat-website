@@ -29,6 +29,7 @@ export default function SchedulePage() {
     }
   }, [items.length]);
 
+  // ⬇️ This is the only real change: we create our own ID and remove the read-back step.
   async function submit() {
     if (!form.customer_name || !form.phone || !form.flat || !form.address_line || !form.preferred_date) {
       alert('Please fill all required fields.');
@@ -42,9 +43,15 @@ export default function SchedulePage() {
       alert('Please add at least one item to cart.');
       return;
     }
+
     setSubmitting(true);
     try {
-      const { data: visit, error } = await supabase.from('visits').insert({
+      // Create our own ID so we don't need to read it back (privacy-friendly)
+      const visitId = crypto.randomUUID();
+
+      // 1) Save the visit row
+      const { error: e1 } = await supabase.from('visits').insert({
+        id: visitId,
         customer_name: form.customer_name,
         phone: form.phone,
         address_line: form.address_line,
@@ -54,16 +61,18 @@ export default function SchedulePage() {
         preferred_date: form.preferred_date,
         preferred_time_slot: form.preferred_time_slot,
         note: form.note
-      }).select('id').single();
-      if (error) throw error;
+      });
+      if (e1) throw e1;
 
-      const rows = items.map(i => ({ visit_id: visit.id, product_id: i.id, quantity: 1 }));
+      // 2) Save each selected item
+      const rows = items.map(i => ({ visit_id: visitId, product_id: i.id, quantity: 1 }));
       const { error: e2 } = await supabase.from('visit_items').insert(rows);
       if (e2) throw e2;
 
+      // 3) Success
       clear();
-      setSuccessId(visit.id);
-    } catch (e:any) {
+      setSuccessId(visitId);
+    } catch (e: any) {
       console.error(e);
       alert('Could not submit. Please try again.');
     } finally {
@@ -142,10 +151,3 @@ export default function SchedulePage() {
                 </div>
               </div>
             ))}
-            {items.length===0 && <p className="text-sm text-gray-500">Your cart is empty.</p>}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
