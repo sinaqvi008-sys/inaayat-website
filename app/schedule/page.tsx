@@ -25,11 +25,11 @@ export default function SchedulePage() {
 
   useEffect(() => {
     if (items.length === 0) {
-      // Ideally redirect back, but keep simple
+      // Ideally redirect back, but keeping it simple for MVP
     }
   }, [items.length]);
 
-  // ⬇️ This is the only real change: we create our own ID and remove the read-back step.
+  // Create our own ID and avoid reading the row back (fits our privacy policy)
   async function submit() {
     if (!form.customer_name || !form.phone || !form.flat || !form.address_line || !form.preferred_date) {
       alert('Please fill all required fields.');
@@ -46,10 +46,9 @@ export default function SchedulePage() {
 
     setSubmitting(true);
     try {
-      // Create our own ID so we don't need to read it back (privacy-friendly)
       const visitId = crypto.randomUUID();
 
-      // 1) Save the visit row
+      // 1) Insert visit
       const { error: e1 } = await supabase.from('visits').insert({
         id: visitId,
         customer_name: form.customer_name,
@@ -64,12 +63,11 @@ export default function SchedulePage() {
       });
       if (e1) throw e1;
 
-      // 2) Save each selected item
+      // 2) Insert selected items
       const rows = items.map(i => ({ visit_id: visitId, product_id: i.id, quantity: 1 }));
       const { error: e2 } = await supabase.from('visit_items').insert(rows);
       if (e2) throw e2;
 
-      // 3) Success
       clear();
       setSuccessId(visitId);
     } catch (e: any) {
@@ -151,3 +149,10 @@ export default function SchedulePage() {
                 </div>
               </div>
             ))}
+            {items.length===0 && <p className="text-sm text-gray-500">Your cart is empty.</p>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
