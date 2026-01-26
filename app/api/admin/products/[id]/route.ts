@@ -2,17 +2,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureAdmin } from '../../_check';
 import { createClient } from '@supabase/supabase-js';
+
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const unauthorized = ensureAdmin(req);
   if (unauthorized) return unauthorized;
+
   const id = Number(params.id);
   const body = await req.json();
   const { title, description, category_id, price, mrp, in_stock, tags, image_urls } = body;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const service = process.env.SUPABASE_SERVICE_ROLE_KEY!;
   const supabase = createClient(url, service);
-  const { error: e1 } = await supabase.from('products').update({ title, description, category_id, price, mrp, in_stock, tags }).eq('id', id);
+
+  // 👉 determine the primary image (first in the list) if provided
+  const primary = Array.isArray(image_urls) && image_urls.length ? image_urls[0] : null;
+
+  // 1) Update product (include primary image if available)
+  const { error: e1 } = await supabase
+    .from('products')
+    .update({ title, description, category_id, price, mrp, in_stock, tags, image_url: primary })
+    .eq('id', id);
   if (e1) return NextResponse.json({ error: e1.message }, { status: 500 });
+
+  // 2) Replace product_images if we got a list
   if (Array.isArray(image_urls)) {
     await supabase.from('product_images').delete().eq('product_id', id);
     if (image_urls.length) {
@@ -21,5 +34,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       if (e2) return NextResponse.json({ error: e2.message }, { status: 500 });
     }
   }
+
   return NextResponse.json({ ok: true });
 }
+``
