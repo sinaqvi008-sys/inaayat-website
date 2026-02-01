@@ -13,39 +13,54 @@ export default function EditProduct({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('id', id)
         .single();
+
+      if (error) {
+        console.error(error);
+        alert('Could not load product');
+        return;
+      }
 
       setProduct(data);
     })();
   }, [id]);
 
   async function save() {
+    if (!product) return;
+
     setBusy(true);
+    try {
+      const pin = getPin();
 
-    const pin = getPin();
-    const res = await fetch('/api/admin/products/' + id, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-admin-pin': pin || '',
-      },
-      body: JSON.stringify(product),
-    });
+      const res = await fetch('/api/admin/products/' + id, {
+        // ✅ use PUT because the API route is PUT
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-pin': pin || '',
+        },
+        // we send the whole product object, which includes quantity
+        body: JSON.stringify(product),
+      });
 
-    const json = await res.json();
-    setBusy(false);
+      const json = await res.json();
 
-    if (!res.ok) {
-      alert(json.error || 'Error updating');
-      return;
+      if (!res.ok) {
+        throw new Error(json.error || 'Error updating');
+      }
+
+      alert('Updated!');
+      router.replace('/admin/products');
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Error updating');
+    } finally {
+      setBusy(false);
     }
-
-    alert('Updated!');
-    router.replace('/admin/products');
   }
 
   if (!product) return <p className="p-6">Loading...</p>;
@@ -59,8 +74,10 @@ export default function EditProduct({ params }: { params: { id: string } }) {
           <label className="text-sm">Title</label>
           <input
             className="input"
-            value={product.title}
-            onChange={(e) => setProduct({ ...product, title: e.target.value })}
+            value={product.title || ''}
+            onChange={(e) =>
+              setProduct({ ...product, title: e.target.value })
+            }
           />
         </div>
 
@@ -69,8 +86,13 @@ export default function EditProduct({ params }: { params: { id: string } }) {
           <input
             className="input"
             type="number"
-            value={product.price}
-            onChange={(e) => setProduct({ ...product, price: Number(e.target.value) })}
+            value={product.price ?? ''}
+          onChange={(e) =>
+              setProduct({
+                ...product,
+                price: e.target.value === '' ? null : Number(e.target.value),
+              })
+            }
           />
         </div>
 
@@ -80,7 +102,12 @@ export default function EditProduct({ params }: { params: { id: string } }) {
             className="input"
             type="number"
             value={product.mrp ?? ''}
-            onChange={(e) => setProduct({ ...product, mrp: Number(e.target.value) })}
+            onChange={(e) =>
+              setProduct({
+                ...product,
+                mrp: e.target.value === '' ? null : Number(e.target.value),
+              })
+            }
           />
         </div>
 
@@ -89,14 +116,19 @@ export default function EditProduct({ params }: { params: { id: string } }) {
           <select
             className="input"
             value={product.in_stock ? 'true' : 'false'}
-            onChange={(e) => setProduct({ ...product, in_stock: e.target.value === 'true' })}
+            onChange={(e) =>
+              setProduct({
+                ...product,
+                in_stock: e.target.value === 'true',
+              })
+            }
           >
             <option value="true">Yes</option>
             <option value="false">No</option>
           </select>
         </div>
 
-        {/* ✅ NEW: Quantity input */}
+        {/* ✅ Quantity field */}
         <div>
           <label className="text-sm">Quantity Available</label>
           <input
@@ -104,7 +136,13 @@ export default function EditProduct({ params }: { params: { id: string } }) {
             type="number"
             min={0}
             value={product.quantity ?? 0}
-            onChange={(e) => setProduct({ ...product, quantity: Number(e.target.value) })}
+            onChange={(e) =>
+              setProduct({
+                ...product,
+                quantity:
+                  e.target.value === '' ? 0 : Number(e.target.value),
+              })
+            }
           />
         </div>
 
@@ -113,17 +151,24 @@ export default function EditProduct({ params }: { params: { id: string } }) {
           <textarea
             className="input"
             rows={3}
-            value={product.description}
-            onChange={(e) => setProduct({ ...product, description: e.target.value })}
+            value={product.description || ''}
+            onChange={(e) =>
+              setProduct({ ...product, description: e.target.value })
+            }
           />
         </div>
       </div>
 
       <div className="mt-6 flex gap-3">
-        <button className="btn btn-primary" onClick={save} disabled={busy}>
+        <button
+          className="btn btn-primary"
+          onClick={save}
+          disabled={busy}
+        >
           {busy ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
     </div>
   );
 }
+``
