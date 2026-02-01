@@ -1,40 +1,73 @@
-
 'use client';
+
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
-import type { Product } from '@/lib/types';
-export default function AdminProducts() {
-  const [items, setItems] = useState<Product[]>([]);
-  const [q, setQ] = useState('');
-  useEffect(()=>{ (async()=>{ const { data } = await supabase.from('products').select('*').order('id', { ascending: false }); setItems(data||[]); })(); },[]);
-  const filtered = items.filter(p => { const n=q.toLowerCase(); return !n || p.title.toLowerCase().includes(n) || (p.tags||[]).join(' ').toLowerCase().includes(n); });
+import { getPin } from '@/lib/adminAuth';
+import Link from 'next/link';
+
+export default function ProductsList() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const pin = getPin();
+      const { data } = await supabase
+        .from('products')
+        .select('*')
+        .order('id', { ascending: false });
+
+      setProducts(data || []);
+      setLoading(false);
+    })();
+  }, []);
+
+  if (loading) return <p className="p-6">Loading...</p>;
+
   return (
     <div className="container py-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-semibold">Products</h1>
-        <Link href="/admin/products/new" className="btn btn-primary">Add Product</Link>
+        <Link href="/admin/products/new" className="btn btn-primary">+ Add Product</Link>
       </div>
-      <input className="input mt-4 max-w-md" placeholder="Search products" value={q} onChange={e=>setQ(e.target.value)} />
-      <div className="mt-4 overflow-auto">
-        <table className="min-w-full text-sm">
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full border">
           <thead>
-            <tr className="text-left border-b">
-              <th className="py-2 pr-4">ID</th>
-              <th className="py-2 pr-4">Title</th>
-              <th className="py-2 pr-4">Price</th>
-              <th className="py-2 pr-4">Stock</th>
-              <th className="py-2 pr-4">Actions</th>
+            <tr className="bg-gray-100 text-left">
+              <th className="p-2 border">Image</th>
+              <th className="p-2 border">Title</th>
+              <th className="p-2 border">Price</th>
+              <th className="p-2 border">In Stock</th>
+
+              {/* ✅ NEW: Quantity column */}
+              <th className="p-2 border">Quantity</th>
+
+              <th className="p-2 border">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map(p => (
-              <tr key={p.id} className="border-b">
-                <td className="py-2 pr-4">{p.id}</td>
-                <td className="py-2 pr-4">{p.title}</td>
-                <td className="py-2 pr-4">₹{p.price}</td>
-                <td className="py-2 pr-4">{p.in_stock ? 'In stock' : 'Out'}</td>
-                <td className="py-2 pr-4"><Link href={`/admin/products/${p.id}`} className="text-brand">Edit</Link></td>
+            {products.map((p) => (
+              <tr key={p.id} className="border-t">
+                <td className="p-2 border">
+                  {p.image_urls?.[0] ? (
+                    <img src={p.image_urls[0]} className="h-14 w-14 object-cover rounded" />
+                  ) : (
+                    '—'
+                  )}
+                </td>
+                <td className="p-2 border">{p.title}</td>
+                <td className="p-2 border">₹{p.price}</td>
+                <td className="p-2 border">{p.in_stock ? 'Yes' : 'No'}</td>
+
+                {/* ✅ NEW: Show quantity */}
+                <td className="p-2 border">{p.quantity ?? 0}</td>
+
+                <td className="p-2 border">
+                  <Link href={`/admin/products/${p.id}`} className="text-blue-600 underline">
+                    Edit
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>
