@@ -1,12 +1,10 @@
-
-import type { Metadata } from 'next';
 import './globals.css';
-import { SITE_NAME } from '@/lib/constants';
 import { CartProvider } from '@/context/CartContext';
+import { ToastProvider } from '@/context/ToastContext';
 
-export const metadata: Metadata = {
-  title: SITE_NAME,
-  description: 'Hyperlocal try-before-you-buy shopping for your colony',
+export const metadata = {
+  title: 'Inaayat Website',
+  description: 'Hyperlocal fashion store',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -14,7 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <CartProvider>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </CartProvider>
       </body>
     </html>
