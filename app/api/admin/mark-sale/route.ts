@@ -1,66 +1,61 @@
-import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { NextRequest, NextResponse } from 'next/server';
+import { ensureAdmin } from '../../_check';
+import { createClient } from '@supabase/supabase-js';
+import { revalidatePath } from 'next/cache';
 
-type Product = {
-  id: number;
-  title: string;
-  price: number;
-  mrp?: number;
-  image_url?: string;
-  quantity: number;
-  in_stock: boolean;
-  [k: string]: any;
-};
+export async function POST(req: NextRequest) {
+  const unauthorized = ensureAdmin(req);
+  if (unauthorized) return unauthorized;
 
-const DATA_PATH = path.join(process.cwd(), 'data', 'products.json');
-
-function readProducts(): Product[] {
-  try {
-    const raw = fs.readFileSync(DATA_PATH, 'utf-8');
-    return JSON.parse(raw) as Product[];
-  } catch (e) {
-    return [];
+  const body = await req.json();
+  const productId = Number(body.productId);
+  if (!productId) {
+    return NextResponse.json({ ok: false, error: 'productId required' }, { status: 400 });
   }
-}
 
-function writeProducts(products: Product[]) {
-  fs.writeFileSync(DATA_PATH, JSON.stringify(products, null, 2), 'utf-8');
-}
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const service = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const supabase = createClient(url, service);
 
-export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { productId } = body;
-    if (typeof productId === 'undefined') {
-      return NextResponse.json({ ok: false, error: 'productId required' }, { status: 400 });
+    const { data, error } = await supabase.rpc('mark_sale', { p_id: productId });
+
+    if (error) {
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
 
-    const products = readProducts();
-    const idx = products.findIndex(p => p.id === Number(productId));
-    if (idx === -1) {
-      return NextResponse.json({ ok: false, error: 'Product not found' }, { status: 404 });
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+      // Distinguish not found vs out of stock
+      const { data: exists, error: e2 } = await supabase
+        .from('products')
+        .select('id, quantity, in_stock')
+        .eq('id', productId)
+        .limit(1)
+        .maybeSingle();
+
+      if (e2) {
+        return NextResponse.json({ ok: false, error: e2.message }, { status: 500 });
+      }
+
+      if (!exists) {
+        return NextResponse.json({ ok: false, error: 'Product not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({ ok: false, error: 'Product out of stock' }, { status: 409 });
     }
 
-    const prod = products[idx];
+    const updated = Array.isArray(data) ? data[0] : data;
 
-    // If already out of stock, return current state
-    if (!prod.in_stock) {
-      return NextResponse.json({ ok: false, error: 'Product already out of stock', product: prod }, { status: 409 });
+    // Revalidate public pages so site reflects new stock immediately.
+    // Adjust these paths to match your app routes if different.
+    try {
+      revalidatePath(`/products/${productId}`);
+      revalidatePath(`/browse`);
+    } catch (revalErr) {
+      console.warn('revalidatePath failed', revalErr);
     }
 
-    // Decrement quantity by 1
-    prod.quantity = Math.max(0, (prod.quantity ?? 0) - 1);
-
-    // If quantity is zero, mark out of stock
-    if (prod.quantity <= 0) {
-      prod.in_stock = false;
-    }
-
-    products[idx] = prod;
-    writeProducts(products);
-
-    return NextResponse.json({ ok: true, product: prod });
+    return NextResponse.json({ ok: true, product: updated }, { status: 200 });
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: err?.message || 'Unknown error' }, { status: 500 });
   }
