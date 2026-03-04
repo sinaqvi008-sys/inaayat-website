@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ensureAdmin } from '../../_check';
+import { ensureAdmin } from '../_check'; // ← fixed path
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 
@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (!data || (Array.isArray(data) && data.length === 0)) {
-      // Distinguish not found vs out of stock
       const { data: exists, error: e2 } = await supabase
         .from('products')
         .select('id, quantity, in_stock')
@@ -46,8 +45,6 @@ export async function POST(req: NextRequest) {
 
     const updated = Array.isArray(data) ? data[0] : data;
 
-    // Revalidate public pages so site reflects new stock immediately.
-    // Adjust these paths to match your app routes if different.
     try {
       revalidatePath(`/products/${productId}`);
       revalidatePath(`/browse`);
