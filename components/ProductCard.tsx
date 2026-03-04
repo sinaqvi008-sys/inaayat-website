@@ -3,32 +3,28 @@ import Image from 'next/image';
 import type { Product } from '@/lib/types';
 import { formatINR } from '@/lib/utils';
 import { useCart } from '@/context/CartContext';
+import { useToast } from '@/context/ToastContext';
 
 export default function ProductCard({ p }: { p: Product }) {
   const { add } = useCart();
+  const { show } = useToast();
 
   const handleAdd = () => {
     const res = add(p);
     if (!res.ok) {
-      console.error(res.reason || 'Could not add item');
+      show(res.reason || 'Could not add item', 'error');
+    } else {
+      show('Added to cart', 'success');
     }
   };
 
   return (
     <article className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition">
-      {/* Product image */}
       {p.image_url && (
         <div className="relative aspect-[3/4] bg-gray-100">
-          <Image
-            src={p.image_url}
-            alt={p.title}
-            fill
-            className="object-cover"
-          />
+          <Image src={p.image_url} alt={p.title} fill className="object-cover" />
         </div>
       )}
-
-      {/* Product info */}
       <div className="p-4">
         <h3 className="text-sm font-medium text-gray-900 line-clamp-1" title={p.title}>
           {p.title}
@@ -36,16 +32,12 @@ export default function ProductCard({ p }: { p: Product }) {
         <p className="mt-1 text-xs text-gray-500 line-clamp-2 min-h-[2.5rem]">
           {p.description}
         </p>
-
-        {/* Price */}
         <div className="mt-2 flex items-center gap-2">
           <span className="text-[#7A1F2B] font-semibold">{formatINR(p.price)}</span>
           {p.mrp && p.mrp > p.price && (
             <span className="text-xs line-through text-gray-400">{formatINR(p.mrp)}</span>
           )}
         </div>
-
-        {/* Add button */}
         <button
           type="button"
           onClick={handleAdd}
