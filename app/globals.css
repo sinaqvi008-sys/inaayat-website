@@ -13,3 +13,18 @@ body { @apply bg-white text-gray-900; }
 .input { @apply border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-brand/30; }
 .card { @apply border border-gray-100 rounded-lg shadow-sm hover:shadow-md transition bg-white; }
 .badge { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-brand/10 text-brand; }
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out;
+}
