@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { getPin } from '@/lib/adminAuth';
 
 type ProductRow = {
   id: number;
@@ -21,20 +22,29 @@ export default function MarkSaleButton({
   async function handleMarkSale() {
     if (!confirm(`Mark one unit sold for "${product.title}"?`)) return;
     setLoading(true);
+
     try {
+      // Read admin PIN from the same helper you use elsewhere
+      const pin = getPin();
+
       const res = await fetch('/api/admin/mark-sale', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // include admin pin so ensureAdmin(req) on the server can validate
+          ...(pin ? { 'x-admin-pin': pin } : {}),
+        },
         body: JSON.stringify({ productId: product.id }),
       });
 
       const json = await res.json();
 
       if (res.ok && json.ok) {
-        // server returns updated product row
         onUpdated?.(json.product);
       } else {
-        if (res.status === 409) {
+        if (res.status === 401) {
+          alert('Unauthorized — admin PIN missing or invalid.');
+        } else if (res.status === 409) {
           alert('Product is already out of stock.');
         } else if (res.status === 404) {
           alert('Product not found.');
