@@ -2,8 +2,8 @@ import './globals.css';
 import Providers from './providers';
 
 export const metadata = {
-  title: 'Inaayat Website',
-  description: 'Hyperlocal fashion store',
+  title: 'Tayat Studio',
+  description: 'Tayat Studio — Hyperlocal fashion store',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
