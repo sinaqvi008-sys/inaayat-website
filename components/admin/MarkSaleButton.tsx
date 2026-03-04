@@ -27,8 +27,11 @@ export default function MarkSaleButton({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId: product.id }),
       });
+
       const json = await res.json();
+
       if (res.ok && json.ok) {
+        // server returns updated product row
         onUpdated?.(json.product);
       } else {
         if (res.status === 409) {
