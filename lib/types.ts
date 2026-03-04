@@ -1,4 +1,3 @@
-
 export type Category = {
   id: number;
   name: string;
@@ -15,8 +14,12 @@ export type Product = {
   price: number;
   mrp: number | null;
   image_url: string | null;
-  in_stock: boolean | null;
+  image_urls?: string[] | null;   // optional array of image URLs (admin uses image_urls)
+  in_stock?: boolean | null;      // optional: whether product is available
+  quantity?: number | null;       // optional: current stock quantity
   tags: string[] | null;
+  created_at?: string | null;
+  [key: string]: any;             // allow extra fields without breaking TS
 };
 
 export type VisitPayload = {
