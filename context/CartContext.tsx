@@ -1,4 +1,5 @@
 'use client';
+
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Product } from '@/lib/types';
 import { MAX_CART_ITEMS } from '@/lib/constants';
@@ -27,22 +28,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch {}
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch {}
   }, [items]);
 
-  const api: CartContextType = useMemo(() => ({
-    items,
-    add: (p: Product) => {
-      if (items.find(i => i.id === p.id)) return { ok: true };
-      if (items.length >= MAX_CART_ITEMS) {
-        return { ok: false, reason: `You can only add ${MAX_CART_ITEMS} items.` };
-      }
-      setItems(prev => [...prev, { ...p, quantity: 1 }]);
-      return { ok: true };
-    },
-    remove: (id: number) => setItems(prev => prev.filter(p => p.id !== id)),
-    clear: () => setItems([])
-  }), [items]);
+  const api: CartContextType = useMemo(
+    () => ({
+      items,
+      add: (p: Product) => {
+        // Prevent adding out-of-stock items
+        if (!p.in_stock || (p.quantity ?? 0) <= 0) {
+          return { ok: false, reason: 'Product is out of stock.' };
+        }
+        if (items.find((i) => i.id === p.id)) return { ok: true };
+        if (items.length >= MAX_CART_ITEMS) {
+          return { ok: false, reason: `You can only add ${MAX_CART_ITEMS} items.` };
+        }
+        setItems((prev) => [...prev, { ...p, quantity: 1 }]);
+        return { ok: true };
+      },
+      remove: (id: number) => setItems((prev) => prev.filter((p) => p.id !== id)),
+      clear: () => setItems([]),
+    }),
+    [items]
+  );
 
   return <CartCtx.Provider value={api}>{children}</CartCtx.Provider>;
 }
