@@ -7,22 +7,30 @@ export default function Hero() {
   const artRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const el = artRef.current;
-    if (!el) return;
+    const elRef = artRef; // stable ref object
 
     // Disable pointer parallax on touch devices
-    if ('ontouchstart' in window) return;
+    if (typeof window !== 'undefined' && 'ontouchstart' in window) return;
 
     let raf = 0;
+
     function onMove(e: MouseEvent) {
+      // capture current node at event time
+      const node = elRef.current;
+      if (!node) return;
+
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        const rect = el.getBoundingClientRect();
+        // re-check inside RAF in case it was unmounted
+        const n = elRef.current;
+        if (!n) return;
+
+        const rect = n.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
         const dx = (e.clientX - cx) / rect.width;
         const dy = (e.clientY - cy) / rect.height;
-        el.style.transform = `translate3d(${dx * 10}px, ${dy * 8}px, 0) rotate(${dx * 1.5}deg)`;
+        n.style.transform = `translate3d(${dx * 10}px, ${dy * 8}px, 0) rotate(${dx * 1.5}deg)`;
       });
     }
 
@@ -109,7 +117,6 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Decorative SVG wave */}
       <div className="pointer-events-none">
         <svg className="w-full" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden>
           <path d="M0,40 C360,120 1080,0 1440,60 L1440,80 L0,80 Z" fill="white" opacity="0.95" />
