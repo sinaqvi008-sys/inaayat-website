@@ -1,4 +1,3 @@
-
 'use client';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Product } from '@/lib/types';
@@ -36,7 +35,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     add: (p: Product) => {
       if (items.find(i => i.id === p.id)) return { ok: true };
       if (items.length >= MAX_CART_ITEMS) {
-        return { ok: false, reason: `You can select up to ${MAX_CART_ITEMS} items.` };
+        return { ok: false, reason: `You can only add ${MAX_CART_ITEMS} items.` };
       }
       setItems(prev => [...prev, { ...p, quantity: 1 }]);
       return { ok: true };
