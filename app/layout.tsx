@@ -1,3 +1,5 @@
+'use client';  // <-- This line is critical
+
 import './globals.css';
 import { CartProvider } from '@/context/CartContext';
 import { ToastProvider } from '@/context/ToastContext';
