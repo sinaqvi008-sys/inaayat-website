@@ -1,4 +1,3 @@
-// app/api/admin/mark-sale/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureAdmin } from '../_check';
 import { createClient } from '@supabase/supabase-js';
