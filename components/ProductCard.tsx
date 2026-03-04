@@ -1,4 +1,5 @@
 'use client';
+
 import Image from 'next/image';
 import type { Product } from '@/lib/types';
 import { formatINR } from '@/lib/utils';
@@ -17,6 +18,8 @@ export default function ProductCard({ p }: { p: Product }) {
       show('Added to cart', 'success');
     }
   };
+
+  const outOfStock = p.in_stock === false || (p.quantity ?? 0) <= 0;
 
   return (
     <article className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition">
@@ -38,13 +41,16 @@ export default function ProductCard({ p }: { p: Product }) {
             <span className="text-xs line-through text-gray-400">{formatINR(p.mrp)}</span>
           )}
         </div>
+
         <button
           type="button"
           onClick={handleAdd}
-          disabled={p.in_stock === false}
-          className="mt-3 w-full rounded-md bg-[#7A1F2B] text-white py-2 text-sm font-medium disabled:opacity-50 hover:bg-[#5e1821] transition"
+          disabled={outOfStock}
+          className={`mt-3 w-full rounded-md ${
+            !outOfStock ? 'bg-[#7A1F2B] text-white hover:bg-[#5e1821]' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+          } py-2 text-sm font-medium disabled:opacity-50 transition`}
         >
-          {p.in_stock === false ? 'Out of Stock' : 'Add to Cart'}
+          {outOfStock ? 'Out of Stock' : 'Add to Cart'}
         </button>
       </div>
     </article>
