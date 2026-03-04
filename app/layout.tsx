@@ -1,8 +1,5 @@
-'use client';  // <-- This line is critical
-
 import './globals.css';
-import { CartProvider } from '@/context/CartContext';
-import { ToastProvider } from '@/context/ToastContext';
+import Providers from './providers';
 
 export const metadata = {
   title: 'Inaayat Website',
@@ -13,11 +10,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <CartProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
-        </CartProvider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
