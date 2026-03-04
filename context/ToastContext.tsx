@@ -22,14 +22,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastCtx.Provider value={{ toasts, show }}>
       {children}
-      {/* Toast container pinned to top center */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[99999] space-y-4">
+      {/* Toast container pinned to very top center */}
+      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999999] space-y-4">
         {toasts.map(t => (
           <div
             key={t.id}
-            className={`flex items-center gap-3 px-6 py-4 rounded-lg shadow-2xl text-white text-lg font-bold animate-fade-in-up
+            className={`flex items-center gap-3 px-8 py-5 rounded-xl shadow-2xl text-white text-xl font-bold
               ${t.type === 'error' ? 'bg-red-700' : 'bg-green-700'}
             `}
+            style={{ opacity: 1 }}
           >
             {t.type === 'error' ? '❌' : '✔️'} {t.message}
           </div>
