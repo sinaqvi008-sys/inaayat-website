@@ -23,15 +23,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastCtx.Provider value={{ toasts, show }}>
       {children}
       {/* Toast container */}
-      <div className="fixed bottom-4 right-4 space-y-2 z-50">
+      <div className="fixed bottom-6 right-6 space-y-3 z-50">
         {toasts.map(t => (
           <div
             key={t.id}
-            className={`px-4 py-2 rounded shadow text-white ${
-              t.type === 'error' ? 'bg-red-600' : 'bg-green-600'
-            }`}
+            className={`flex items-center gap-2 px-5 py-3 rounded-lg shadow-lg text-white text-base font-semibold animate-fade-in-up
+              ${t.type === 'error' ? 'bg-red-600' : 'bg-green-600'}
+            `}
           >
-            {t.message}
+            {t.type === 'error' ? '❌' : '✔️'} {t.message}
           </div>
         ))}
       </div>
