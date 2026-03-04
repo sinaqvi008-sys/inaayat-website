@@ -30,7 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen flex bg-white">
       <aside className="w-64 border-r bg-white">
         <div className="px-4 py-4 border-b">
-          <div className="text-lg font-semibold">Inaayat Admin</div>
+          <div className="text-lg font-semibold">Tayat Admin</div>
           <div className="text-xs text-gray-500">Manage your store</div>
         </div>
         <nav className="p-3 space-y-1">
